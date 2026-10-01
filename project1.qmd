@@ -15,9 +15,11 @@ faculty <- read.csv("trinity faculty.csv")
 
 -   stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
 
--   proportional allocation calculated for each and rounded to nearest whole number
+-   proportional allocation calculated for each and rounded to the nearest whole number
 
-    -    values rounded down to 0 were manually changed to 1 (insert justification)
+    -   values rounded down to 0 were manually changed to 1 (insert justification)
+
+-   faculty IDs are created based on their order of appearance on the [Duke Trinity Scholars](https://scholars.duke.edu/organization/) website, in surname alphabetical order
 
 ```{r}
 #| label: renaming-variables
@@ -59,3 +61,11 @@ sample <- trin_faculty |>
 
 sample
 ```
+
+Question 1. What is an estimate of the fraction of faculty who are women?
+
+Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?
+
+Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?
+
+Question 4. Question of our choice
