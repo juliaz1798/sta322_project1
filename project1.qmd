@@ -1,0 +1,61 @@
+---
+title: "STA322 - Project 1"
+author: "Julia Zheng and Christina Zhang"
+editor: source
+format: pdf
+---
+
+```{r}
+
+library(survey)
+library(tidyverse)
+
+faculty <- read.csv("trinity faculty.csv")
+```
+
+-   stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
+
+-   proportional allocation calculated for each and rounded to nearest whole number
+
+    -    values rounded down to 0 were manually changed to 1 (insert justification)
+
+```{r}
+#| label: renaming-variables
+
+faculty <- faculty |>
+  rename(
+    stratum = 'Stratum..',
+    department = 'Dept.name',
+    N_h = 'X..of.faculty',
+    n_h = 'Rounded.allocation'
+  ) |>
+  arrange(stratum)
+```
+
+```{r}
+#|label: create-facultyIDs
+
+trin_faculty <- faculty |>
+  rowwise() |>
+  reframe(
+    stratum = stratum,
+    department = department,
+    faculty_id = 1:N_h,
+    n_h = n_h
+  )
+```
+
+```{r}
+#|label: stratified-random-sample
+
+set.seed(215)
+
+sample <- trin_faculty |>
+  group_by(stratum, department) |>
+  group_modify(~ slice_sample(.x, n = .x$n_h[1], replace = FALSE)) |> 
+  #for julia: fyi this line of code debugged by chat
+  ungroup() |>
+  arrange(stratum, faculty_id)
+
+sample
+```
