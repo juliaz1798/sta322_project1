@@ -6,12 +6,68 @@ format: pdf
 ---
 
 ```{r}
-
 library(survey)
 library(tidyverse)
 
 faculty <- read.csv("trinity faculty.csv")
 ```
+
+-   PPS sampling without replacement was used, with each of the 41 Trinity departments treated as a primary sampling unit.
+
+-   A department’s measure of size, (M_i), was its number of faculty. Thus, departments with more faculty had a larger probability of selection.
+
+-   Four departments were selected using systematic PPS sampling without replacement. This number was chosen because a PPS-selected department was expected to contain about 48 faculty, so four departments were expected to yield approximately 192 faculty—close to the original target of 200. The realized number of faculty varies depending on which departments are selected.
+
+-   The alphabetical department order was randomized before selection to avoid having the systematic PPS sample depend on that ordering. A seed of 215 was set so that the sample can be reproduced.
+
+-   All faculty in each selected department were included in the sample. Faculty IDs were based on surname alphabetical order as listed on the Duke Trinity Scholars website.
+
+-   Although departments were selected without replacement, we calculated the with-replacement variance estimator. This treats the selected departments as if they had been independently sampled with replacement and provides a conservative variance approximation.
+
+```{r}
+trinity <- read_csv("trinity faculty.csv")
+
+trinity <- trinity |>
+  rename(
+    stratum = `Stratum #`,
+    department = `Dept name`,
+    M_i = `# of faculty`
+  )
+
+m <- 4   # number of departments to select
+
+set.seed(215)
+
+# randomize alphabetical department order and then select m departments PPS w/out replacement
+pps_frame <- trinity |>
+  slice_sample(prop = 1) |>
+  mutate(
+    pi_i = sampling::inclusionprobabilities(M_i, n = m),
+    selected = sampling::UPsystematic(pi_i)
+  )
+
+pps_sample <- pps_sample |>
+  mutate(weight = 1 / pi_i)
+
+PPS_WR <- svydesign(
+  ids = ~1,
+  weights = ~weight,
+  data = pps_sample
+)
+
+svytotal(~M_i, PPS_WR)
+
+```
+
+Question 1. What is an estimate of the fraction of faculty who are women?
+
+Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?
+
+Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?
+
+Question 4. Question of our choice
+
+OLD STRATIFIED SAMPLING CODE
 
 -   stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
 
@@ -61,11 +117,3 @@ sample <- trin_faculty |>
 
 sample
 ```
-
-Question 1. What is an estimate of the fraction of faculty who are women?
-
-Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?
-
-Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?
-
-Question 4. Question of our choice
