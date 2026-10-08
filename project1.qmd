@@ -15,15 +15,15 @@ library(tidyverse)
 library(pps)
 ```
 
-- PPS sampling without replacement was used, with each of the 41 Trinity departments treated as a primary sampling unit.
+-   PPS sampling without replacement was used, with each of the 41 Trinity departments treated as a primary sampling unit.
 
-- A department’s measure of size, (M_i), was its number of faculty. Thus, departments with more faculty had a larger probability of selection.
+-   A department’s measure of size, (M_i), was its number of faculty. Thus, departments with more faculty had a larger probability of selection.
 
-- We aimed for a sample size of 100, so we chose to do a two-stage PPS cluster sample from 20 departments and do a SRS of 5 faculty from each department selected.
+-   We aimed for a sample size of 100, so we chose to do a two-stage PPS cluster sample from 20 departments and do a SRS of 5 faculty from each department selected.
 
-- A seed of 215 was set so that the sample can be reproduced.
+-   A seed of 919 was set so that the sample can be reproduced.
 
-- Although departments were selected without replacement, we calculated the with-replacement variance estimator. This treats the selected departments as if they had been independently sampled with replacement and provides a conservative variance approximation.
+-   \*\*\*Although departments were selected without replacement, we calculated the with-replacement variance estimator. This treats the selected departments as if they had been independently sampled with replacement and provides a conservative variance approximation.
 
 ```{r}
 # load and reorganize data
@@ -130,14 +130,14 @@ Question 2. What fraction of faculty have at least one grant that is ongoing in 
 
 Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?
 
-Question 4. Question of our choice
+Question 4. Question of our choice. Did this faculty receive their undergraduate degree outside of the US?
 
 OLD STRATIFIED SAMPLING CODE
 
-- stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
+-   stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
 
-- proportional allocation calculated for each and rounded to the nearest whole number
+-   proportional allocation calculated for each and rounded to the nearest whole number
 
-  - values rounded down to 0 were manually changed to 1 (insert justification)
+    -   values rounded down to 0 were manually changed to 1 (insert justification)
 
-- faculty IDs are created based on their order of appearance on the [Duke Trinity Scholars](https://scholars.duke.edu/organization/) website, in surname alphabetical order
+-   faculty IDs are created based on their order of appearance on the [Duke Trinity Scholars](https://scholars.duke.edu/organization/) website, in surname alphabetical order
