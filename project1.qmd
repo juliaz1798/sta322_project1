@@ -5,58 +5,123 @@ editor: source
 format: pdf
 ---
 
+# Introduction
+
+hi
+
 ```{r}
 library(survey)
 library(tidyverse)
-
-faculty <- read.csv("trinity faculty.csv")
+library(pps)
 ```
 
--   PPS sampling without replacement was used, with each of the 41 Trinity departments treated as a primary sampling unit.
+- PPS sampling without replacement was used, with each of the 41 Trinity departments treated as a primary sampling unit.
 
--   A department’s measure of size, (M_i), was its number of faculty. Thus, departments with more faculty had a larger probability of selection.
+- A department’s measure of size, (M_i), was its number of faculty. Thus, departments with more faculty had a larger probability of selection.
 
--   Four departments were selected using systematic PPS sampling without replacement. This number was chosen because a PPS-selected department was expected to contain about 48 faculty, so four departments were expected to yield approximately 192 faculty—close to the original target of 200. The realized number of faculty varies depending on which departments are selected.
+- We aimed for a sample size of 100, so we chose to do a two-stage PPS cluster sample from 20 departments and do a SRS of 5 faculty from each department selected.
 
--   The alphabetical department order was randomized before selection to avoid having the systematic PPS sample depend on that ordering. A seed of 215 was set so that the sample can be reproduced.
+- A seed of 215 was set so that the sample can be reproduced.
 
--   All faculty in each selected department were included in the sample. Faculty IDs were based on surname alphabetical order as listed on the Duke Trinity Scholars website.
-
--   Although departments were selected without replacement, we calculated the with-replacement variance estimator. This treats the selected departments as if they had been independently sampled with replacement and provides a conservative variance approximation.
+- Although departments were selected without replacement, we calculated the with-replacement variance estimator. This treats the selected departments as if they had been independently sampled with replacement and provides a conservative variance approximation.
 
 ```{r}
-trinity <- read_csv("trinity faculty.csv")
+# load and reorganize data
+
+trinity <- read_csv("trinity_faculty.csv")
 
 trinity <- trinity |>
-  rename(
-    stratum = `Stratum #`,
-    department = `Dept name`,
-    M_i = `# of faculty`
-  )
+  select(stratum = "Stratum #", 
+         department = "Dept name", 
+         M_i = "# of faculty")
 
-m <- 4   # number of departments to select
+n_dept <- 20 # number of departments to select
 
-set.seed(215)
+trinity <- trinity[sample(1:nrow(trinity)), ] # randomize order of rows since systematic sampling depends on order
 
-# randomize alphabetical department order and then select m departments PPS w/out replacement
-pps_frame <- trinity |>
-  slice_sample(prop = 1) |>
-  mutate(
-    pi_i = sampling::inclusionprobabilities(M_i, n = m),
-    selected = sampling::UPsystematic(pi_i)
-  )
+```
 
-pps_sample <- pps_sample |>
-  mutate(weight = 1 / pi_i)
+```{r}
+# systematic PPS sampling
 
-PPS_WR <- svydesign(
-  ids = ~1,
-  weights = ~weight,
-  data = pps_sample
+t_x <- sum(trinity$M_i) # total number of faculty across all departments
+
+trinity$pi_i <- n_dept * trinity$M_i / t_x # first-order inclusion probability for each department
+
+max(trinity$pi_i) # check assumption that nxi/tx <= 1 for all i. it's not...
+
+# check which department pis > 1 --> treat as certainty cases
+trinity |>
+  filter(pi_i > 1) |>
+  select(department, M_i, pi_i)
+
+```
+
+```{r}
+# dealing with certainty cases
+
+# separate initial certainty and non-certainty departments
+certainty <- trinity |>
+  filter(pi_i >= 1) |>
+  mutate(pi_i = 1)
+
+remaining <- trinity |>
+  filter(pi_i < 1)
+
+n_remaining <- n_dept - nrow(certainty) # calculate number of additional departments to select
+
+remaining$pi_i <- n_remaining * remaining$M_i / sum(remaining$M_i) # recalculate pi_i for remaining departments
+
+# if recalculation creates additional certainty PSUs, repeat until all remaining probabilities are below 1
+while (any(remaining$pi_i >= 1)) {
+  new_certainty <- remaining |>
+    filter(pi_i >= 1) |>
+    mutate(pi_i = 1)
+  certainty <- bind_rows(certainty, new_certainty)
+  remaining <- remaining |>
+    filter(pi_i < 1)
+  n_remaining <- n_dept - nrow(certainty)
+  remaining$pi_i <- n_remaining * remaining$M_i / sum(remaining$M_i)
+}
+
+# results check
+certainty |>
+  select(department, M_i, pi_i) # 7 certainty cases identified (1 additional throughout recalculations)
+
+nrow(certainty)
+n_remaining
+max(remaining$pi_i)
+```
+
+```{r}
+set.seed(919)
+# select remaining cases with pps & add certainty cases
+
+selected_depts <- ppss(remaining$M_i, n_remaining) # returns numbers of selected rows
+
+pps_remaining <- remaining[selected_depts, ] # keep selected departments
+
+pps_sample <- bind_rows(certainty, pps_remaining) # combine certainty psus with pps-selected departments
+
+nrow(pps_sample) # check 20 departments were selected
+
+# view selected departments
+pps_sample |>
+  select(department, M_i, pi_i)
+```
+
+```{r}
+# stage 2 srs
+
+# srs 5 faculty from each department
+pps_sample$faculty_numbers <- lapply(
+  pps_sample$M_i,
+  function(M_i) sample(1:M_i, 5)
 )
 
-svytotal(~M_i, PPS_WR)
-
+# view numbers of faculty selected
+pps_sample |>
+  select(department, M_i, pi_i, faculty_numbers)
 ```
 
 Question 1. What is an estimate of the fraction of faculty who are women?
@@ -69,51 +134,10 @@ Question 4. Question of our choice
 
 OLD STRATIFIED SAMPLING CODE
 
--   stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
+- stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
 
--   proportional allocation calculated for each and rounded to the nearest whole number
+- proportional allocation calculated for each and rounded to the nearest whole number
 
-    -   values rounded down to 0 were manually changed to 1 (insert justification)
+  - values rounded down to 0 were manually changed to 1 (insert justification)
 
--   faculty IDs are created based on their order of appearance on the [Duke Trinity Scholars](https://scholars.duke.edu/organization/) website, in surname alphabetical order
-
-```{r}
-#| label: renaming-variables
-
-faculty <- faculty |>
-  rename(
-    stratum = 'Stratum..',
-    department = 'Dept.name',
-    N_h = 'X..of.faculty',
-    n_h = 'Rounded.allocation'
-  ) |>
-  arrange(stratum)
-```
-
-```{r}
-#|label: create-facultyIDs
-
-trin_faculty <- faculty |>
-  rowwise() |>
-  reframe(
-    stratum = stratum,
-    department = department,
-    faculty_id = 1:N_h,
-    n_h = n_h
-  )
-```
-
-```{r}
-#|label: stratified-random-sample
-
-set.seed(215)
-
-sample <- trin_faculty |>
-  group_by(stratum, department) |>
-  group_modify(~ slice_sample(.x, n = .x$n_h[1], replace = FALSE)) |> 
-  #for julia: fyi this line of code debugged by chat
-  ungroup() |>
-  arrange(stratum, faculty_id)
-
-sample
-```
+- faculty IDs are created based on their order of appearance on the [Duke Trinity Scholars](https://scholars.duke.edu/organization/) website, in surname alphabetical order
