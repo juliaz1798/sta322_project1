@@ -9,7 +9,7 @@ format: pdf
 
 Our project uses a two-stage probability proportional to size (PPS) cluster sample to estimate characteristics of faculty in Trinity College of Arts & Sciences at Duke University. We aimed to estimate four characteristics of this population: the fraction of faculty who are women, the fraction with at least one grant ongoing in 2026, the average number of years since receiving a Ph.D. among faculty who hold one, and the average number of years since last publication among faculty who have published. To answer these questions, we aimed for a representative sample of about 100 faculty, drawn in a way that limited how many departmental websites we had to visit.
 
-### Design Justication
+### Design Justification
 
 Our sampling frame consisted of the 41 Trinity departments and programs, along with the number of eligible faculty in each department. Because departments vary substantially in size, ranging from 1 to 82 faculty members, we decided to implement a two-stage PPS cluster sampling design. Departments served as primary sampling units (PSUs), and individual faculty served as secondary sampling units (SSUs). Using PPS at the first stage gave larger departments a greater probability of selection, which avoided giving a small department the same probability of selection as a department with substantially more faculty. The two-stage design also made data collection more feasible by allowing us to first pick a subset of departments and then only identify a few faculty within each of those departments. This prevented us from needing to collect data from all 41 departmental websites.
 
