@@ -35,25 +35,26 @@ remaining <- trinity |>
   filter(!department %in% certainty_depts)
 remaining$pi_i <- 13 * remaining$M_i / sum(remaining$M_i)
 
-max(remaining$pi_i)   # should be 0.9246, matching the sampling step
-
 dept_info <- bind_rows(certainty, remaining)
 ```
 
 ```{r}
 # systematic PPS sampling
-n_dept <- 20
+
+trinity <- read_csv("trinity_faculty.csv") |>
+  select(stratum = "Stratum #",
+         department = "Dept name",
+         M_i = "# of faculty")
+
+# 2. define n_dept, compute t_x and the first-pass pi_i
+n_dept <- 20 # number of departments to select
 
 t_x <- sum(trinity$M_i) # total number of faculty across all departments
 
-trinity$pi_i <- n_dept * trinity$M_i / t_x # first-order inclusion probability for each department
+trinity$pi_i <- n_dept * trinity$M_i / t_x # first-order inclusion probability
 
-max(trinity$pi_i) # check assumption that nxi/tx <= 1 for all i. it's not...
+max(trinity$pi_i) # should be 1.378, so some departments exceed 1
 
-# check which department pis > 1 --> treat as certainty cases
-trinity |>
-  filter(pi_i > 1) |>
-  select(department, M_i, pi_i)
 
 ```
 
@@ -143,7 +144,7 @@ samples <- samples |>
 samples <- samples |>
   left_join(dept_info, by = "department")
 
-samples$weight <- (1 / samples$pi_i) * (samples$M_i / 5)
+samples$weight <- (t_x / (n_dept * samples$M_i)) * (samples$M_i / 5)
 
 # 4. survey design
 fac_des <- svydesign(
