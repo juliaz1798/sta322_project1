@@ -113,8 +113,6 @@ pps_sample |>
 
 We set a random seed (919) before selecting the departments so that our sample can be reproduced. \[Only if the shuffle is in your code: Before the systematic PPS selection, we also randomly reordered the 41 departments, so the original order of the sampling frame would not influence which departments were chosen.\] The 13 non-certainty departments selected this way, together with the 7 certainty departments, gave us our sample of 20 departments.
 
-### 
-
 ```{r}
 # stage 2 srs
 
@@ -136,6 +134,8 @@ $$\pi_{j \mid i} = \frac{5}{M_i}.$$
 The overall inclusion probability for faculty member $j$ in department $i$ is
 
 $$\pi_{ij} = \pi_i \, \pi_{j \mid i} = \pi_i \cdot \frac{5}{M_i}.$$
+
+# Data Collection
 
 ```{r}
 
@@ -252,9 +252,11 @@ confint(prop_intl, level = .95)
 
 We estimate that 18.5% of Trinity faculty with a known undergraduate institution received their undergraduate degree outside the US. We are 95% confident that the true fraction of these faculty who received their undergraduate degree outside the US is between 6.2% and 30.9%.
 
-# Other design considerations
+# Caveats and other considerations
 
-We first considered a simple random sample (SRS) of 100 faculty. An SRS has equal inclusion probabilities and is easy to analyze. The problem is that it requires a complete list of every eligible Trinity faculty member before any sampling can happen. One goal of our design was to avoid compiling faculty information from all 41 department websites, so an SRS did not fit our data collection.
+Systematic PPS sampling has a drawback for variance estimation. As with any systematic sample, some pairs of departments can never be selected together, so the joint inclusion probability $\pi_{ik}$ is 0 for some pairs $(i, k)$. The usual Horvitz–Thompson variance estimator needs these joint probabilities, so it cannot be used to estimate the variance of our estimates. Following lecture, we instead pretend the sample was drawn with replacement and use the with-replacement variance estimator.
+
+Initially, we considered a simple random sample (SRS) of 100 faculty. An SRS has equal inclusion probabilities and is easy to analyze. The problem is that it requires a complete list of every eligible Trinity faculty member before any sampling can happen, and the goal of our design was to avoid compiling faculty information from all 41 department websites, so an SRS did not fit our data collection.
 
 We also considered stratified sampling, with each department as a stratum. Stratifying ensures every department is represented, and it can improve precision when faculty within a department are similar to each other but departments differ. However, department sizes vary a lot. With proportional allocation,
 
