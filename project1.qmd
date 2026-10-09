@@ -14,6 +14,8 @@ Our project uses a two-stage probability proportional to size (PPS) cluster samp
 Our goal was a final sample of 100 faculty, which we obtained in two stages. In the first stage, we selected 20 of the 41 Trinity departments using systematic PPS sampling without replacement, with each department's number of faculty as its measure of size. In the second stage, we selected 5 faculty from each chosen department by simple random sampling without replacement. This gives a final sample of $20 \times 5 = 100$ faculty.
 
 ```{r}
+#| message: FALSE 
+
 library(survey)
 library(tidyverse)
 library(pps)
@@ -21,6 +23,9 @@ library(dplyr)
 ```
 
 ```{r}
+#| message: false
+#| warning: false
+
 # load and reorganize data
 
 trinity <- read_csv("trinity_faculty.csv") 
@@ -50,11 +55,11 @@ trinity$pi_i <- n_dept * trinity$M_i / t_x
 max(trinity$pi_i) # should be 1.378, so some departments exceed 1
 ```
 
-Let \$M_i\$ be the number of eligible faculty in department \$i\$, and let \$M_0 = \\sum\_{i=1}\^{41} M_i\$ be the total number of eligible faculty across all 41 departments. If no department were large enough to require certainty selection, the first-order inclusion probability for department \$i\$ under PPS sampling would be
+Let $M_i$ be the number of eligible faculty in department $i$, and let $M_0 = \sum_{i=1}^{41} M_i$ be the total number of eligible faculty across all 41 departments. If no department were large enough to require certainty selection, the first-order inclusion probability for department $i$ under PPS sampling would be
 
-\$\$\\pi_i = \\frac{20\\, M_i}{M_0}.\$\$
+$$\pi_i = \frac{20\, M_i}{M_0}.$\$
 
-For six of the largest departments, this formula gave \$\\pi_i \> 1\$, which is not a valid probability.
+For the largest departments, this formula gave $\pi_i > 1$, which is not a valid probability.
 
 ```{r}
 # dealing with certainty cases
@@ -67,11 +72,14 @@ certainty <- trinity |>
 remaining <- trinity |>
   filter(pi_i < 1)
 
-n_remaining <- n_dept - nrow(certainty) # calculate number of additional departments to select
+# calculate number of additional departments to select
+n_remaining <- n_dept - nrow(certainty) 
 
-remaining$pi_i <- n_remaining * remaining$M_i / sum(remaining$M_i) # recalculate pi_i for remaining departments
+# recalculate pi_i for remaining departments
+remaining$pi_i <- n_remaining * remaining$M_i / sum(remaining$M_i) 
 
-# if recalculation creates additional certainty PSUs, repeat until all remaining probabilities are below 1
+# if recalculation creates additional certainty PSUs, 
+# repeat until all remaining probabilities are below 1
 while (any(remaining$pi_i >= 1)) {
   new_certainty <- remaining |>
     filter(pi_i >= 1) |>
@@ -82,36 +90,33 @@ while (any(remaining$pi_i >= 1)) {
   n_remaining <- n_dept - nrow(certainty)
   remaining$pi_i <- n_remaining * remaining$M_i / sum(remaining$M_i)
 }
-
-# results check
-certainty |>
-  select(department, M_i, pi_i) # 7 certainty cases identified (1 additional throughout recalculations)
-
-nrow(certainty)
-n_remaining
-max(remaining$pi_i)
 ```
 
 We treated these departments as certainty PSUs and set $\pi_i = 1$ for them. We then recalculated the inclusion probabilities for the remaining departments, using the number of selections still needed and the total number of faculty in the remaining departments. This pushed one more department above 1, so we repeated the process until every remaining probability was below 1. In the end, 7 departments were certainty PSUs, leaving 13 departments to be selected.
 
 ```{r}
-set.seed(919)
 # select remaining cases with pps & add certainty cases
 
-selected_depts <- ppss(remaining$M_i, n_remaining) # returns numbers of selected rows
+set.seed(919)
 
-pps_remaining <- remaining[selected_depts, ] # keep selected departments
+# returns numbers of selected rows
+selected_depts <- ppss(remaining$M_i, n_remaining) 
 
-pps_sample <- bind_rows(certainty, pps_remaining) # combine certainty psus with pps-selected departments
+# keep selected departments
+pps_remaining <- remaining[selected_depts, ] 
 
-nrow(pps_sample) # check 20 departments were selected
+# combine certainty psus with pps-selected departments
+pps_sample <- bind_rows(certainty, pps_remaining) 
+
+# check 20 departments were selected
+nrow(pps_sample) 
 
 # view selected departments
 pps_sample |>
   select(department, M_i, pi_i)
 ```
 
-We set a random seed (919) before selecting the departments so that our sample can be reproduced. \[Only if the shuffle is in your code: Before the systematic PPS selection, we also randomly reordered the 41 departments, so the original order of the sampling frame would not influence which departments were chosen.\] The 13 non-certainty departments selected this way, together with the 7 certainty departments, gave us our sample of 20 departments.
+We set a random seed (919) before selecting the departments so that our sample can be reproduced. The 13 non-certainty departments selected this way, together with the 7 certainty departments, gave us our sample of 20 departments.
 
 ```{r}
 # stage 2 srs
@@ -138,11 +143,11 @@ $$\pi_{ij} = \pi_i \, \pi_{j \mid i} = \pi_i \cdot \frac{5}{M_i}.$$
 # Data Collection
 
 ```{r}
+#read and clean collected data 
 
 samples <- read.csv("pps_sample.csv") 
 
 samples <- samples |>
-  select(-any_of(c("M_i", "pi_i", "pi", "weight"))) |>
   rename(
     woman = Sex..1...F..0...other.,
     grant = Ongoing.grant...1...Yes..0...No.,
@@ -152,13 +157,27 @@ samples <- samples |>
     intl_ugrad = International.undergrad.degree.
   )
 
-# 3. attach M_i and pi_i, then build the weight
+# attach M_i and pi_i, then build the weight
 samples <- samples |>
   left_join(dept_info, by = "department")
 
-samples$weight <- (t_x / (n_dept * samples$M_i)) * (samples$M_i / 5)
+samples$weight <- samples$M_i / (5 * samples$pi_i)
 
-# 4. survey design
+```
+
+```{r}
+#dealing with missing data
+# z = 1 if y is observed, 0 if missing; obs = y * z 
+
+# Q3: years since phd
+samples$z_phd   <- ifelse(!is.na(samples$yrs_phd) 
+                          & samples$has_phd == 1, 1, 0)
+samples$obs_phd <- ifelse(samples$z_phd == 1, samples$yrs_phd, 0)
+
+# Q4a: years since last pub
+samples$z_pub   <- ifelse(!is.na(samples$yrs_pub), 1, 0)
+samples$obs_pub <- ifelse(samples$z_pub == 1, samples$yrs_pub, 0)
+
 fac_des <- svydesign(
   ids = ~department,
   weights = ~weight,
@@ -166,17 +185,17 @@ fac_des <- svydesign(
 )
 ```
 
-Let \$S\$ be the set of sampled departments and \$s_i\$ the set of sampled faculty in department \$i\$. For a variable \$y\_{ij}\$, the estimated population total is
+Let $S$ be the set of sampled departments and $s_i$ the set of sampled faculty in department $i$. For a variable $y_{ij}$, the estimated population total is
 
-\$\$\\hat{t}\_y = \\sum\_{i \\in S} \\sum\_{j \\in s_i} w\_{ij}\\, y\_{ij},\$\$
+$$\hat{t}_y = \sum_{i \in S} \sum_{j \in s_i} w_{ij}\, y_{ij}$$
 
 and the estimated population mean is
 
-\$\$\\hat{\\bar{y}} = \\frac{\\sum\_{i \\in S} \\sum\_{j \\in s_i} w\_{ij}\\, y\_{ij}}{\\sum\_{i \\in S} \\sum\_{j \\in s_i} w\_{ij}}.\$\$
+$$\hat{\bar{y}} = \frac{\sum_{i \in S} \sum_{j \in s_i} w_{ij}\, y_{ij}}{\sum_{i \in S} \sum_{j \in s_i} w_{ij}}$$
 
-The fraction of faculty who are women, the fraction with an ongoing grant, and the fraction with an international undergraduate degree are weighted proportions. The average years since Ph.D. andOur goal was a final sample of 100 faculty, which we obtained in two stages. In the first stage, we selected 20 of the 41 Trinity departments using systematic PPS sampling without replacement, with each department's number of faculty as its measure of size. In the second stage, we selected 5 faculty from each chosen department by simple random sampling without replacement. This gives a final sample of $20 \times 5 = 100$ faculty. the average years since last publication are weighted means, restricted to sampled faculty who hold a Ph.D. and to those who have published, respectively. We computed all estimates with the \`survey\` package, using departments as the clusters, and report 95% confidence intervals.
+The fraction of faculty who are women, the fraction with an ongoing grant, and the fraction with an international undergraduate degree are weighted proportions. The average years since Ph.D. and the average years since last publication are weighted means, restricted to sampled faculty who hold a Ph.D. and to those who have published, respectively. We computed all estimates with the \`survey\` package, using departments as the clusters, and report 95% confidence intervals.
 
-Question 1. What is an estimate of the fraction of faculty who are women?
+**Question 1. What is an estimate of the fraction of faculty who are women?**
 
 ```{r}
 #|label: women-prop
@@ -188,9 +207,9 @@ confint(prop_women, level = .95)
 
 ```
 
-We estimate that 37.0% of Trinity faculty are women. We are 95% confident that the true fraction of Trinity faculty who are women is between 25.9% and 48.1%.
+We estimate that 36.0% of Trinity faculty are women. We are 95% confident that the true fraction of Trinity faculty who are women is between 24.8% and 48.1%.
 
-Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?
+**Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?**
 
 ```{r}
 #|label: grant
@@ -202,16 +221,14 @@ confint(prop_grant, level = .95)
 
 ```
 
-We estimate that 19.0% of Trinity faculty have at least one grant ongoing in 2026. We are 95% confident that the true fraction of Trinity faculty with at least one grant ongoing in 2026 is between 8.2% and 29.8%.
+We estimate that 19.0% of Trinity faculty have at least one grant ongoing in 2026. We are 95% confident that the true fraction of Trinity faculty with at least one grant ongoing in 2026 is between 8.4% and 29.5%.
 
-Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?
+**Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?**
 
 ```{r}
 #|label: phd
 
-phd_des <- subset(fac_des, has_phd == 1)
-
-avg_phd <- svymean(~yrs_phd, phd_des)
+avg_phd <- svyratio(~obs_phd, ~z_phd, fac_des)
 avg_phd
 
 confint(avg_phd, level = .95)
@@ -220,25 +237,23 @@ confint(avg_phd, level = .95)
 
 Among faculty who have a Ph.D., we estimate that the average time since receiving the degree is 25.7 years. We are 95% confident that, among Trinity faculty with a Ph.D., the true average number of years since receiving the degree is between 20.7 and 30.7 years.
 
-Question 4.
+**Question 4**
 
-a\) Among those who have published papers, what is the avg number of years since their last publication?
+**a) Among those who have published papers, what is the avg number of years since their last publication?**
 
 ```{r}
 #|label: pub-yrs
 
-pub_des <- subset(fac_des, !is.na(yrs_pub))
-
-avg_pub <- svymean(~yrs_pub, pub_des)
+avg_pub <- svyratio(~obs_pub, ~z_pub, fac_des)
 avg_pub
 
 confint(avg_pub, level = .95)
 
 ```
 
-Among faculty who have published, we estimate that the average time since their last publication is 2.85 years. We are 95% confident that, among Trinity faculty who have published, the true average number of years since their last publication is between 1.54 and 4.16 years.
+Among faculty who have published papers, we estimate that the average time since their last publication is 2.8 years. We are 95% confident that, among Trinity faculty who have published papers, the true average number of years since their last publication is between 1.5 and 4.2 years.
 
-b\) Did this faculty receive their undergraduate degree outside of the US?
+**b) What fraction of faculty received their undergraduate degree outside the United States?**
 
 ```{r}
 #|label: int-ug
@@ -250,7 +265,7 @@ confint(prop_intl, level = .95)
 
 ```
 
-We estimate that 18.5% of Trinity faculty with a known undergraduate institution received their undergraduate degree outside the US. We are 95% confident that the true fraction of these faculty who received their undergraduate degree outside the US is between 6.2% and 30.9%.
+We estimate that 18.5% of Trinity faculty with a known undergraduate institution received their undergraduate degree outside the United States. We are 95% confident that the true fraction is between 6.2% and 30.9%.
 
 # Caveats and other considerations
 
@@ -260,7 +275,7 @@ Initially, we considered a simple random sample (SRS) of 100 faculty. An SRS has
 
 We also considered stratified sampling, with each department as a stratum. Stratifying ensures every department is represented, and it can improve precision when faculty within a department are similar to each other but departments differ. However, department sizes vary a lot. With proportional allocation,
 
-\$\$n_i = n \\, \\frac{M_i}{M_0},\$\$
+$$n_i = n \, \frac{M_i}{M_0}$$
 
 many small departments would be allocated well under one faculty member. For example, Cinematic Arts, with 7 faculty, would get about 0.6. Rounding would either leave many small departments out or force us to move far from proportional allocation. Stratification would also still require a faculty list for all 41 departments.
 
