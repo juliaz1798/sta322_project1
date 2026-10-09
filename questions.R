@@ -23,22 +23,11 @@ avg_phd
 
 confint(avg_phd, level = .95)
 
-# Question 4
-
-# 4a: Among those who have published papers, what is the average number of 
-# years since their last publication?
+# Question 4: Among those who have published papers, what is the average number  
+# of years since their last publication?
 
 avg_pub <- svyratio(~obs_pub, ~z_pub, fac_des)
 avg_pub
 
 confint(avg_pub, level = .95)
-
-
-# 4b: What fraction of faculty received their undergraduate degree outside 
-# the United States?
-
-prop_intl <- svymean(~intl_ugrad, fac_des, na.rm = TRUE)
-prop_intl
-
-confint(prop_intl, level = .95)
 

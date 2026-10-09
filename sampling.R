@@ -87,7 +87,13 @@ pps_sample |>
   select(department, M_i, pi_i, faculty_numbers) 
 
 dept_info <- pps_sample |>
-  select(department, M_i, pi_i)
+  select(department, M_i, pi_i, faculty_numbers) |>
+  mutate(
+    faculty_numbers = sapply(
+      faculty_numbers,
+      function(x) paste(sort(x), collapse = ", ")
+    )
+  )
 
 write.csv(dept_info, "dept_info.csv", row.names = FALSE)
 
@@ -135,12 +141,9 @@ samples$obs_phd <- ifelse(samples$z_phd == 1, samples$yrs_phd, 0)
 samples$z_pub <- ifelse(!is.na(samples$yrs_pub), 1, 0)
 samples$obs_pub <- ifelse(samples$z_pub == 1, samples$yrs_pub, 0)
 
+# build survey
 fac_des <- svydesign(
   ids = ~department,
   weights = ~weight,
   data = samples
 )
-
-# Question 4
-
-# 4a: 

@@ -9,6 +9,10 @@ format: pdf
 
 Our project uses a two-stage probability proportional to size (PPS) cluster sample to estimate characteristics of faculty in Trinity College of Arts & Sciences at Duke University. We aimed to estimate four characteristics of this population: the fraction of faculty who are women, the fraction with at least one grant ongoing in 2026, the average number of years since receiving a Ph.D. among faculty who hold one, and the average number of years since last publication among faculty who have published. To answer these questions, we aimed for a representative sample of about 100 faculty, drawn in a way that limited how many departmental websites we had to visit.
 
+### Design Justication
+
+Our sampling frame consisted of the 41 Trinity departments and programs, along with the number of eligible faculty in each department. Because departments vary substantially in size, ranging from 1 to 82 faculty members, we decided to implement a two-stage PPS cluster sampling design. Departments served as primary sampling units (PSUs), and individual faculty served as secondary sampling units (SSUs). Using PPS at the first stage gave larger departments a greater probability of selection, which avoided giving a small department the same probability of selection as a department with substantially more faculty. The two-stage design also made data collection more feasible by allowing us to first pick a subset of departments and then only identify a few faculty within each of those departments. This prevented us from needing to collect data from all 41 departmental websites.
+
 # Sampling design
 
 Our goal was a final sample of 100 faculty, which we obtained in two stages. In the first stage, we selected 20 of the 41 Trinity departments using systematic PPS sampling without replacement, with each department's number of faculty as its measure of size. In the second stage, we selected 5 faculty from each chosen department by simple random sampling without replacement. This gives a final sample of $20 \times 5 = 100$ faculty.
@@ -17,70 +21,78 @@ Let $M_i$ be the number of eligible faculty in department $i$, and let $M_0 = \s
 
 $$\pi_i = \frac{nx_i}{t_x} = \frac{20M_i}{M_0}.$$
 
-However, our initial check revealed 6 departments whose For the largest departments, this formula gave $\pi_i > 1$, which is not a valid probability.
-
-We treated these departments as certainty PSUs and set $\pi_i = 1$ for them. We then removed these certainty cases and recalculated the inclusion probabilities for the remaining departments as
+However, our initial check revealed 6 departments who had $\pi_i > 1$, which is not a valid probability. We treated these departments as certainty PSUs and set $\pi_i = 1$ for them. We then removed these certainty cases and recalculated the inclusion probabilities for the remaining departments as
 
 $$\pi_i = \frac{n_rM_i}{\sum_{i\in R}M_i}$$
 
-where $n_r$ is the number of departments still needed and $R$ is the set of remaining departments. This recalculation resulted in one additional department having an inclusion probability greater than 1, so we repeated the process until all remaining probabilities were below 1. In the end, 7 departments were identified as certainty PSUs, leaving 13 additional departments to be selected using systematic PPS sampling. We used the `pps` function from the `ppss` package in order to perform this systematic PPS sampling.
-
-The 13 non-certainty departments selected this way, together with the 7 certainty departments, gave us our sample of 20 departments.
+where $n_r$ is the number of departments still needed and $R$ is the set of remaining departments. This recalculation resulted in one additional department having an inclusion probability greater than 1, so we repeated the process until all remaining probabilities were below 1. In the end, 7 departments were identified as certainty PSUs: Physics, Biology, Mathematics, Music, Romance Studies, Economics, and Psychology & Neuroscience. This left 13 additional departments to be selected using systematic PPS sampling. We used the `pps` function from the `ppss` package in order to perform this systematic PPS sampling. The 13 non-certainty departments selected this way, together with the 7 certainty departments, gave us our sample of 20 departments.
 
 Within each selected department $i$, we selected 5 faculty by simple random sampling without replacement. The probability that faculty member $j$ was chosen, given that department $i$ was selected, was therefore
 
 $$\pi_{j \mid i} = \frac{5}{M_i}.$$
 
-The overall inclusion probability for faculty member $j$ in department $i$ is
+The overall inclusion probability for faculty member $j$ in department $i$ was
 
 $$\pi_{ij} = \pi_i \, \pi_{j \mid i} = \pi_i \cdot \frac{5}{M_i}.$$
 
+This gave us our table of departments and faculty numbers to sample from:
+
+```{r}
+#| echo: false
+#| message: false
+library(knitr)
+library(dplyr)
+dept_info <- read.csv("dept_info.csv")
+dept_info |>
+  select(department, faculty_numbers) |>
+  knitr::kable(
+    col.names = c("Department", "Selected Faculty Numbers"),
+    caption = "Sampled Departments and Faculty"
+  )
+```
+
 # Data Collection
 
-Let $S$ be the set of sampled departments and $s_i$ the set of sampled faculty in department $i$. For a variable $y_{ij}$, the estimated population total is
+After generating the faculty numbers to be sampled from each selected department, we used the scholars.duke.edu website and manually identified the faculty member corresponding to each selected number (counted down the list of faculty for each department). We then collected the relevant publicly available information for each sampled faculty member, including gender, ongoing grant status, Ph.D. status and year, and year of most recent publication.
 
-$$\hat{t}_y = \sum_{i \in S} \sum_{j \in s_i} w_{ij}\, y_{ij}$$
+We used the `survey` package in R to account for unequal sampling weights, with departments specified as clusters. We estimated weighted proportions for the categorical outcomes (percent women and percent with ongoing grants) and weighted means for the continuous outcomes (years since Ph.D. and years since last publication) and report 95% confidence intervals for all estimates.
 
-and the estimated population mean is
+### Missing Data
 
-$$\hat{\bar{y}} = \frac{\sum_{i \in S} \sum_{j \in s_i} w_{ij}\, y_{ij}}{\sum_{i \in S} \sum_{j \in s_i} w_{ij}}$$
+To account for missing data (e.g., faculty with no Ph.D. or published works), we defined an indicator $z_i$, where $z_i=1$ if the value of interest was observed and $z_i=0$ otherwise. We then estimated the mean using the ratio estimator
 
-The fraction of faculty who are women, the fraction with an ongoing grant, and the fraction with an international undergraduate degree are weighted proportions. The average years since Ph.D. and the average years since last publication are weighted means, restricted to sampled faculty who hold a Ph.D. and to those who have published, respectively. We computed all estimates with the `survey` package, using departments as the clusters, and report 95% confidence intervals.
+$$\hat{\bar{Y}} = \frac{\sum_{i\in s} w_i y_i z_i} {\sum_{i\in s} w_i z_i}.$$
+
+This ensures that observations with missing values do not contribute to either the numerator or denominator. For Question 3, $z_i=1$ if the faculty member had a Ph.D. and the number of years since receiving their Ph.D. was observed. For Question 4a, $z_i=1$ if the faculty member had publications recorded on their profile. We implemented these estimates using `svyratio`.
 
 ## **Question 1. What is an estimate of the fraction of faculty who are women?**
 
-We estimate that 36.0% of Trinity faculty are women. We are 95% confident that the true fraction of Trinity faculty who are women is between 23.8% and 48.1%.
+We estimate that 36.0% of Trinity faculty are women, with a standard error of 6.2%. We are 95% confident that the true fraction of Trinity faculty who are women is between 23.8% and 48.1%.
 
 ## **Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?**
 
-We estimate that 19.0% of Trinity faculty have at least one grant ongoing in 2026. We are 95% confident that the true fraction of Trinity faculty with at least one grant ongoing in 2026 is between 8.4% and 29.5%.
+We estimate that 19.0% of Trinity faculty have at least one grant ongoing in 2026, with a standard error of 5.4%. We are 95% confident that the true fraction of Trinity faculty with at least one grant ongoing in 2026 is between 8.4% and 29.5%.
 
 ## **Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?**
 
-Among faculty who have a Ph.D., we estimate that the average time since receiving the degree is 25.7 years. We are 95% confident that, among Trinity faculty with a Ph.D., the true average number of years since receiving the degree is between 20.7 and 30.7 years.
+Among faculty who have a Ph.D., we estimate that the average time since receiving the degree is 25.7 years, with a standard error of 2.43 years. We are 95% confident that, among Trinity faculty with a Ph.D., the true average number of years since receiving the degree is between 20.7 and 30.7 years.
 
-## **Question 4**
+## **Question 4: Among those who have published papers, what is the average number of years since their last publication?**
 
-### **a) Among those who have published papers, what is the average number of years since their last publication?**
+Among faculty who have published papers, we estimate that the average time since their last publication is 2.8 years, with a standard error of 0.63 years. We are 95% confident that, among Trinity faculty who have published papers, the true average number of years since their last publication is between 1.5 and 4.2 years.
 
-Among faculty who have published papers, we estimate that the average time since their last publication is 2.8 years. We are 95% confident that, among Trinity faculty who have published papers, the true average number of years since their last publication is between 1.5 and 4.2 years.
+# Caveats and Other Considerations
 
-### **b) What fraction of faculty received their undergraduate degree outside the United States?**
-
-We estimate that 18.5% of Trinity faculty with a known undergraduate institution received their undergraduate degree outside the United States. We are 95% confident that the true fraction is between 6.2% and 30.9%. This confidence interval is particularly wide due to a high amount of missing data in this category, which is why we chose to also look at years since last pub.
-
-# Caveats and other considerations
-
-Systematic PPS sampling has a drawback for variance estimation. As with any systematic sample, some pairs of departments can never be selected together, so the joint inclusion probability $\pi_{ik}$ is 0 for some pairs $(i, k)$. The usual Horvitz–Thompson variance estimator needs these joint probabilities, so it cannot be used to estimate the variance of our estimates. Following lecture, we instead pretend the sample was drawn with replacement and use the with-replacement variance estimator.
+Although we decided to use a two-stage PPS cluster design to account for the substantial differences in department size, systematic PPS has a drawback in variance estimation. As with any systematic sample, some pairs of departments can never be selected together, so the joint inclusion probability $\pi_{ik}$ is 0 for some pairs $(i, k)$. The usual Horvitz–Thompson variance estimator needs these joint probabilities, so it cannot be used to estimate the variance of our estimates. Following the approach discussed in lecture, we used a with-replacement approach to estimate variance. We implemented this using the `survey` package, specifying department as the PSU and identifying our final sampling weights, with no fpc. The resulting standard errors were used to construct 95% confidence intervals. Because a with-replacement estimator was used, the variance may be positively biased.
 
 ### Other Considered Designs
 
 Initially, we considered a simple random sample (SRS) of 100 faculty. An SRS has equal inclusion probabilities and is easy to analyze. The problem is that it requires a complete list of every eligible Trinity faculty member before any sampling can happen, and the goal of our design was to avoid compiling faculty information from all 41 department websites, so an SRS did not fit our data collection.
 
-We also considered stratified sampling, with each department as a stratum. Stratifying ensures every department is represented, and it can improve precision when faculty within a department are similar to each other but departments differ. However, department sizes vary a lot. With proportional allocation,
+Because we knew that characteristics like gender and ongoing grant status would vary systematically between departments, we also considered stratified sampling, with each department as a stratum. Stratifying ensures every department is represented, and it can improve precision when faculty within a department are similar to each other but departments differ. However, department sizes vary a lot. With proportional allocation,
 
-$$n_i = n \, \frac{M_i}{M_0}$$
+$$n_i = 100\frac{M_i}{M_0}$$
 
-many small departments would be allocated well under one faculty member. For example, Cinematic Arts, with 7 faculty, would get about 0.6. Rounding would either leave many small departments out or force us to move far from proportional allocation. Stratification would also still require a faculty list for all 41 departments.
+many small departments would be allocated well under one faculty member. For example, Cinematic Arts, with 7 faculty, would get about 0.6. Rounding would either leave many small departments out or force us to move far from proportional allocation. We debated increasing the sample size to 200 in order to resolve this issue, but found that data collection would be too taxing. Stratification would also still require a faculty list for all 41 departments.
 
 We therefore chose a two-stage PPS cluster design, which balances statistical representation against practical effort. Sampling departments with probability proportional to size gives larger departments a better chance of being selected, and the second-stage SRS gives a probability sample of faculty within each selected department. Most importantly, we only need to build faculty lists for the 20 selected departments instead of all 41. Choosing 20 departments, rather than fewer, also spreads the sample over many clusters, which limits the loss of precision that happens when faculty within the same department are similar.

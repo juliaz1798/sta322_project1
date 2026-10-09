@@ -1,21 +1,21 @@
-"department","M_i","pi_i"
-"Physics",60,1
-"Biology",77,1
-"Mathematics",82,1
-"Music",62,1
-"Romance Studies",66,1
-"Economics",81,1
-"Psychology & Neuroscience",59,1
-"International Comparative Studies",5,0.0924608819345661
-"Literature",25,0.462304409672831
-"Art, Art History & Visual Studies",44,0.813655761024182
-"Evolutionary Anthropology",26,0.480796586059744
-"Computer Science",48,0.887624466571835
-"Classical Studies",19,0.351351351351351
-"Dance Program",21,0.388335704125178
-"History",47,0.869132290184922
-"Army Reserve Officer Training Corps (ROTC)",5,0.0924608819345661
-"Cinematic Arts",7,0.129445234708393
-"Cultural Anthropology",23,0.425320056899004
-"Political Science",43,0.795163584637269
-"Sociology",35,0.647226173541963
+"department","M_i","pi_i","faculty_numbers"
+"Physics",60,1,"5, 31, 44, 48, 55"
+"Biology",77,1,"6, 26, 36, 38, 60"
+"Mathematics",82,1,"7, 39, 45, 46, 77"
+"Music",62,1,"7, 9, 10, 23, 28"
+"Romance Studies",66,1,"26, 30, 35, 40, 49"
+"Economics",81,1,"16, 57, 61, 72, 80"
+"Psychology & Neuroscience",59,1,"13, 19, 20, 38, 46"
+"International Comparative Studies",5,0.0924608819345661,"1, 2, 3, 4, 5"
+"Literature",25,0.462304409672831,"10, 14, 19, 22, 25"
+"Art, Art History & Visual Studies",44,0.813655761024182,"13, 15, 24, 34, 36"
+"Evolutionary Anthropology",26,0.480796586059744,"5, 7, 13, 14, 26"
+"Computer Science",48,0.887624466571835,"19, 33, 41, 45, 46"
+"Classical Studies",19,0.351351351351351,"10, 12, 15, 16, 19"
+"Dance Program",21,0.388335704125178,"5, 11, 15, 16, 19"
+"History",47,0.869132290184922,"18, 25, 30, 32, 33"
+"Army Reserve Officer Training Corps (ROTC)",5,0.0924608819345661,"1, 2, 3, 4, 5"
+"Cinematic Arts",7,0.129445234708393,"1, 2, 3, 5, 7"
+"Cultural Anthropology",23,0.425320056899004,"1, 2, 4, 6, 14"
+"Political Science",43,0.795163584637269,"6, 10, 16, 28, 43"
+"Sociology",35,0.647226173541963,"1, 2, 16, 26, 29"
