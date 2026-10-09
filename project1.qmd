@@ -13,124 +13,19 @@ Our project uses a two-stage probability proportional to size (PPS) cluster samp
 
 Our goal was a final sample of 100 faculty, which we obtained in two stages. In the first stage, we selected 20 of the 41 Trinity departments using systematic PPS sampling without replacement, with each department's number of faculty as its measure of size. In the second stage, we selected 5 faculty from each chosen department by simple random sampling without replacement. This gives a final sample of $20 \times 5 = 100$ faculty.
 
-```{r}
-#| message: FALSE 
-
-library(survey)
-library(tidyverse)
-library(pps)
-library(dplyr)
-```
-
-```{r}
-#| message: false
-#| warning: false
-
-# load and reorganize data
-
-trinity <- read_csv("trinity_faculty.csv") 
-
-trinity <- trinity |>
-  select(department = "Dept name", M_i = "# of faculty")
-
-# certainty departments (pi_i = 1), same 7 as in the sampling step
-certainty_depts <- c("Economics", "Physics", "Romance Studies", "Music",
-                     "Biology", "Mathematics", "Psychology & Neuroscience")
-
-certainty <- trinity |>
-  filter(department %in% certainty_depts) |>
-  mutate(pi_i = 1)
-
-# remaining departments: 13 more selected, pi_i = 13 * M_i / sum(M_i)
-remaining <- trinity |>
-  filter(!department %in% certainty_depts)
-remaining$pi_i <- 13 * remaining$M_i / sum(remaining$M_i)
-
-dept_info <- bind_rows(certainty, remaining)
-
-n_dept <- 20
-t_x <- sum(trinity$M_i)
-trinity$pi_i <- n_dept * trinity$M_i / t_x
-
-max(trinity$pi_i) # should be 1.378, so some departments exceed 1
-```
-
 Let $M_i$ be the number of eligible faculty in department $i$, and let $M_0 = \sum_{i=1}^{41} M_i$ be the total number of eligible faculty across all 41 departments. If no department were large enough to require certainty selection, the first-order inclusion probability for department $i$ under PPS sampling would be
 
-$$\pi_i = \frac{20\, M_i}{M_0}.$\$
+$$\pi_i = \frac{nx_i}{t_x} = \frac{20M_i}{M_0}.$$
 
-For the largest departments, this formula gave $\pi_i > 1$, which is not a valid probability.
+However, our initial check revealed 6 departments whose For the largest departments, this formula gave $\pi_i > 1$, which is not a valid probability.
 
-```{r}
-# dealing with certainty cases
+We treated these departments as certainty PSUs and set $\pi_i = 1$ for them. We then removed these certainty cases and recalculated the inclusion probabilities for the remaining departments as
 
-# separate initial certainty and non-certainty departments
-certainty <- trinity |>
-  filter(pi_i >= 1) |>
-  mutate(pi_i = 1)
+$$\pi_i = \frac{n_rM_i}{\sum_{i\in R}M_i}$$
 
-remaining <- trinity |>
-  filter(pi_i < 1)
+where $n_r$ is the number of departments still needed and $R$ is the set of remaining departments. This recalculation resulted in one additional department having an inclusion probability greater than 1, so we repeated the process until all remaining probabilities were below 1. In the end, 7 departments were identified as certainty PSUs, leaving 13 additional departments to be selected using systematic PPS sampling. We used the `pps` function from the `ppss` package in order to perform this systematic PPS sampling.
 
-# calculate number of additional departments to select
-n_remaining <- n_dept - nrow(certainty) 
-
-# recalculate pi_i for remaining departments
-remaining$pi_i <- n_remaining * remaining$M_i / sum(remaining$M_i) 
-
-# if recalculation creates additional certainty PSUs, 
-# repeat until all remaining probabilities are below 1
-while (any(remaining$pi_i >= 1)) {
-  new_certainty <- remaining |>
-    filter(pi_i >= 1) |>
-    mutate(pi_i = 1)
-  certainty <- bind_rows(certainty, new_certainty)
-  remaining <- remaining |>
-    filter(pi_i < 1)
-  n_remaining <- n_dept - nrow(certainty)
-  remaining$pi_i <- n_remaining * remaining$M_i / sum(remaining$M_i)
-}
-```
-
-We treated these departments as certainty PSUs and set $\pi_i = 1$ for them. We then recalculated the inclusion probabilities for the remaining departments, using the number of selections still needed and the total number of faculty in the remaining departments. This pushed one more department above 1, so we repeated the process until every remaining probability was below 1. In the end, 7 departments were certainty PSUs, leaving 13 departments to be selected.
-
-```{r}
-# select remaining cases with pps & add certainty cases
-
-set.seed(919)
-
-# returns numbers of selected rows
-selected_depts <- ppss(remaining$M_i, n_remaining) 
-
-# keep selected departments
-pps_remaining <- remaining[selected_depts, ] 
-
-# combine certainty psus with pps-selected departments
-pps_sample <- bind_rows(certainty, pps_remaining) 
-
-# check 20 departments were selected
-nrow(pps_sample) 
-
-# view selected departments
-pps_sample |>
-  select(department, M_i, pi_i)
-```
-
-We set a random seed (919) before selecting the departments so that our sample can be reproduced. The 13 non-certainty departments selected this way, together with the 7 certainty departments, gave us our sample of 20 departments.
-
-```{r}
-# stage 2 srs
-
-# srs 5 faculty from each department
-pps_sample$faculty_numbers <- lapply(
-  pps_sample$M_i,
-  function(M_i) sample(1:M_i, 5)
-)
-
-# view numbers of faculty selected
-pps_sample |>
-  select(department, M_i, pi_i, faculty_numbers)
-```
+The 13 non-certainty departments selected this way, together with the 7 certainty departments, gave us our sample of 20 departments.
 
 Within each selected department $i$, we selected 5 faculty by simple random sampling without replacement. The probability that faculty member $j$ was chosen, given that department $i$ was selected, was therefore
 
@@ -142,49 +37,6 @@ $$\pi_{ij} = \pi_i \, \pi_{j \mid i} = \pi_i \cdot \frac{5}{M_i}.$$
 
 # Data Collection
 
-```{r}
-#read and clean collected data 
-
-samples <- read.csv("pps_sample.csv") 
-
-samples <- samples |>
-  rename(
-    woman = Sex..1...F..0...other.,
-    grant = Ongoing.grant...1...Yes..0...No.,
-    has_phd = PhD...1...Yes..0...No.,
-    yrs_phd = Number.of.years.since.PhD,
-    yrs_pub = Years.since.last.pub,
-    intl_ugrad = International.undergrad.degree.
-  )
-
-# attach M_i and pi_i, then build the weight
-samples <- samples |>
-  left_join(dept_info, by = "department")
-
-samples$weight <- samples$M_i / (5 * samples$pi_i)
-
-```
-
-```{r}
-#dealing with missing data
-# z = 1 if y is observed, 0 if missing; obs = y * z 
-
-# Q3: years since phd
-samples$z_phd   <- ifelse(!is.na(samples$yrs_phd) 
-                          & samples$has_phd == 1, 1, 0)
-samples$obs_phd <- ifelse(samples$z_phd == 1, samples$yrs_phd, 0)
-
-# Q4a: years since last pub
-samples$z_pub   <- ifelse(!is.na(samples$yrs_pub), 1, 0)
-samples$obs_pub <- ifelse(samples$z_pub == 1, samples$yrs_pub, 0)
-
-fac_des <- svydesign(
-  ids = ~department,
-  weights = ~weight,
-  data = samples
-)
-```
-
 Let $S$ be the set of sampled departments and $s_i$ the set of sampled faculty in department $i$. For a variable $y_{ij}$, the estimated population total is
 
 $$\hat{t}_y = \sum_{i \in S} \sum_{j \in s_i} w_{ij}\, y_{ij}$$
@@ -193,83 +45,35 @@ and the estimated population mean is
 
 $$\hat{\bar{y}} = \frac{\sum_{i \in S} \sum_{j \in s_i} w_{ij}\, y_{ij}}{\sum_{i \in S} \sum_{j \in s_i} w_{ij}}$$
 
-The fraction of faculty who are women, the fraction with an ongoing grant, and the fraction with an international undergraduate degree are weighted proportions. The average years since Ph.D. and the average years since last publication are weighted means, restricted to sampled faculty who hold a Ph.D. and to those who have published, respectively. We computed all estimates with the \`survey\` package, using departments as the clusters, and report 95% confidence intervals.
+The fraction of faculty who are women, the fraction with an ongoing grant, and the fraction with an international undergraduate degree are weighted proportions. The average years since Ph.D. and the average years since last publication are weighted means, restricted to sampled faculty who hold a Ph.D. and to those who have published, respectively. We computed all estimates with the `survey` package, using departments as the clusters, and report 95% confidence intervals.
 
-**Question 1. What is an estimate of the fraction of faculty who are women?**
+## **Question 1. What is an estimate of the fraction of faculty who are women?**
 
-```{r}
-#|label: women-prop
+We estimate that 36.0% of Trinity faculty are women. We are 95% confident that the true fraction of Trinity faculty who are women is between 23.8% and 48.1%.
 
-prop_women <- svymean(~woman, fac_des)
-prop_women
-
-confint(prop_women, level = .95)
-
-```
-
-We estimate that 36.0% of Trinity faculty are women. We are 95% confident that the true fraction of Trinity faculty who are women is between 24.8% and 48.1%.
-
-**Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?**
-
-```{r}
-#|label: grant
-
-prop_grant <- svymean(~grant, fac_des)
-prop_grant
-
-confint(prop_grant, level = .95)
-
-```
+## **Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?**
 
 We estimate that 19.0% of Trinity faculty have at least one grant ongoing in 2026. We are 95% confident that the true fraction of Trinity faculty with at least one grant ongoing in 2026 is between 8.4% and 29.5%.
 
-**Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?**
-
-```{r}
-#|label: phd
-
-avg_phd <- svyratio(~obs_phd, ~z_phd, fac_des)
-avg_phd
-
-confint(avg_phd, level = .95)
-
-```
+## **Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?**
 
 Among faculty who have a Ph.D., we estimate that the average time since receiving the degree is 25.7 years. We are 95% confident that, among Trinity faculty with a Ph.D., the true average number of years since receiving the degree is between 20.7 and 30.7 years.
 
-**Question 4**
+## **Question 4**
 
-**a) Among those who have published papers, what is the avg number of years since their last publication?**
-
-```{r}
-#|label: pub-yrs
-
-avg_pub <- svyratio(~obs_pub, ~z_pub, fac_des)
-avg_pub
-
-confint(avg_pub, level = .95)
-
-```
+### **a) Among those who have published papers, what is the average number of years since their last publication?**
 
 Among faculty who have published papers, we estimate that the average time since their last publication is 2.8 years. We are 95% confident that, among Trinity faculty who have published papers, the true average number of years since their last publication is between 1.5 and 4.2 years.
 
-**b) What fraction of faculty received their undergraduate degree outside the United States?**
+### **b) What fraction of faculty received their undergraduate degree outside the United States?**
 
-```{r}
-#|label: int-ug
-
-prop_intl <- svymean(~intl_ugrad, fac_des, na.rm = TRUE)
-prop_intl
-
-confint(prop_intl, level = .95)
-
-```
-
-We estimate that 18.5% of Trinity faculty with a known undergraduate institution received their undergraduate degree outside the United States. We are 95% confident that the true fraction is between 6.2% and 30.9%.
+We estimate that 18.5% of Trinity faculty with a known undergraduate institution received their undergraduate degree outside the United States. We are 95% confident that the true fraction is between 6.2% and 30.9%. This confidence interval is particularly wide due to a high amount of missing data in this category, which is why we chose to also look at years since last pub.
 
 # Caveats and other considerations
 
 Systematic PPS sampling has a drawback for variance estimation. As with any systematic sample, some pairs of departments can never be selected together, so the joint inclusion probability $\pi_{ik}$ is 0 for some pairs $(i, k)$. The usual Horvitz–Thompson variance estimator needs these joint probabilities, so it cannot be used to estimate the variance of our estimates. Following lecture, we instead pretend the sample was drawn with replacement and use the with-replacement variance estimator.
+
+### Other Considered Designs
 
 Initially, we considered a simple random sample (SRS) of 100 faculty. An SRS has equal inclusion probabilities and is easy to analyze. The problem is that it requires a complete list of every eligible Trinity faculty member before any sampling can happen, and the goal of our design was to avoid compiling faculty information from all 41 department websites, so an SRS did not fit our data collection.
 
