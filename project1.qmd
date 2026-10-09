@@ -7,42 +7,42 @@ format: pdf
 
 # Introduction
 
-hi
-
 ```{r}
 library(survey)
 library(tidyverse)
 library(pps)
+library(dplyr)
 ```
-
--   PPS sampling without replacement was used, with each of the 41 Trinity departments treated as a primary sampling unit.
-
--   A department’s measure of size, (M_i), was its number of faculty. Thus, departments with more faculty had a larger probability of selection.
-
--   We aimed for a sample size of 100, so we chose to do a two-stage PPS cluster sample from 20 departments and do a SRS of 5 faculty from each department selected.
-
--   A seed of 919 was set so that the sample can be reproduced
-
--   \*\*\*Although departments were selected without replacement, we calculated the with-replacement variance estimator. This treats the selected departments as if they had been independently sampled with replacement and provides a conservative variance approximation.
 
 ```{r}
 # load and reorganize data
 
-trinity <- read_csv("trinity_faculty.csv")
+trinity <- read_csv("trinity_faculty.csv") 
 
 trinity <- trinity |>
-  select(stratum = "Stratum #", 
-         department = "Dept name", 
-         M_i = "# of faculty")
+  select(department = "Dept name", M_i = "# of faculty")
 
-n_dept <- 20 # number of departments to select
+# certainty departments (pi_i = 1), same 7 as in the sampling step
+certainty_depts <- c("Economics", "Physics", "Romance Studies", "Music",
+                     "Biology", "Mathematics", "Psychology & Neuroscience")
 
-trinity <- trinity[sample(1:nrow(trinity)), ] # randomize order of rows since systematic sampling depends on order
+certainty <- trinity |>
+  filter(department %in% certainty_depts) |>
+  mutate(pi_i = 1)
 
+# remaining departments: 13 more selected, pi_i = 13 * M_i / sum(M_i)
+remaining <- trinity |>
+  filter(!department %in% certainty_depts)
+remaining$pi_i <- 13 * remaining$M_i / sum(remaining$M_i)
+
+max(remaining$pi_i)   # should be 0.9246, matching the sampling step
+
+dept_info <- bind_rows(certainty, remaining)
 ```
 
 ```{r}
 # systematic PPS sampling
+n_dept <- 20
 
 t_x <- sum(trinity$M_i) # total number of faculty across all departments
 
@@ -126,8 +126,31 @@ pps_sample |>
 
 ```{r}
 
-samples <- read.csv("pps_sample.csv")
+samples <- read.csv("pps_sample.csv") 
 
+samples <- samples |>
+  select(-any_of(c("M_i", "pi_i", "pi", "weight"))) |>
+  rename(
+    woman = Sex..1...F..0...other.,
+    grant = Ongoing.grant...1...Yes..0...No.,
+    has_phd = PhD...1...Yes..0...No.,
+    yrs_phd = Number.of.years.since.PhD,
+    yrs_pub = Years.since.last.pub,
+    intl_ugrad = International.undergrad.degree.
+  )
+
+# 3. attach M_i and pi_i, then build the weight
+samples <- samples |>
+  left_join(dept_info, by = "department")
+
+samples$weight <- (1 / samples$pi_i) * (samples$M_i / 5)
+
+# 4. survey design
+fac_des <- svydesign(
+  ids = ~department,
+  weights = ~weight,
+  data = samples
+)
 ```
 
 Question 1. What is an estimate of the fraction of faculty who are women?
@@ -135,16 +158,63 @@ Question 1. What is an estimate of the fraction of faculty who are women?
 ```{r}
 #|label: women-prop
 
+prop_women <- svymean(~woman, fac_des)
+prop_women
 
+confint(prop_women, level = .95)
 
 ```
 
 Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?
 
+```{r}
+#|label: grant
+
+prop_grant <- svymean(~grant, fac_des)
+prop_grant
+
+confint(prop_grant, level = .95)
+
+```
+
 Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?
+
+```{r}
+#|label: phd
+
+phd_des <- subset(fac_des, has_phd == 1)
+
+avg_phd <- svymean(~yrs_phd, phd_des)
+avg_phd
+
+confint(avg_phd, level = .95)
+
+```
 
 Question 4.
 
-a\)
+a\) Among those who have published papers, what is the avg number of years since their last publication?
+
+```{r}
+#|label: pub-yrs
+
+pub_des <- subset(fac_des, !is.na(yrs_pub))
+
+avg_pub <- svymean(~yrs_pub, pub_des)
+avg_pub
+
+confint(avg_pub, level = .95)
+
+```
 
 b\) Did this faculty receive their undergraduate degree outside of the US?
+
+```{r}
+#|label: int-ug
+
+prop_intl <- svymean(~intl_ugrad, fac_des)
+prop_intl
+
+confint(prop_intl, level = .95)
+
+```
