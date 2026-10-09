@@ -21,7 +21,7 @@ library(pps)
 
 -   We aimed for a sample size of 100, so we chose to do a two-stage PPS cluster sample from 20 departments and do a SRS of 5 faculty from each department selected.
 
--   A seed of 919 was set so that the sample can be reproduced.
+-   A seed of 919 was set so that the sample can be reproduced
 
 -   \*\*\*Although departments were selected without replacement, we calculated the with-replacement variance estimator. This treats the selected departments as if they had been independently sampled with replacement and provides a conservative variance approximation.
 
@@ -124,20 +124,27 @@ pps_sample |>
   select(department, M_i, pi_i, faculty_numbers)
 ```
 
+```{r}
+
+samples <- read.csv("pps_sample.csv")
+
+```
+
 Question 1. What is an estimate of the fraction of faculty who are women?
+
+```{r}
+#|label: women-prop
+
+
+
+```
 
 Question 2. What fraction of faculty have at least one grant that is ongoing in 2026?
 
 Question 3. Among faculty who have a Ph.D. degree, what is the average number of years since they received the Ph.D. degree?
 
-Question 4. Question of our choice. Did this faculty receive their undergraduate degree outside of the US?
+Question 4.
 
-OLD STRATIFIED SAMPLING CODE
+a\)
 
--   stratified sampling with each department as a stratum (41 in total and labeled in alphabetical order 1 through 41)
-
--   proportional allocation calculated for each and rounded to the nearest whole number
-
-    -   values rounded down to 0 were manually changed to 1 (insert justification)
-
--   faculty IDs are created based on their order of appearance on the [Duke Trinity Scholars](https://scholars.duke.edu/organization/) website, in surname alphabetical order
+b\) Did this faculty receive their undergraduate degree outside of the US?

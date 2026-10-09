@@ -1,0 +1,101 @@
+stratum,department,faculty_id,n_h,Name,"Sex (1 = F, 0 = other)","Ongoing grant? (1 = Yes, 0 = No)","PhD? (1 = Yes, 0 = No)",Number of years since PhD,Years since last pub,International undergrad degree?
+3,Army Reserve Officer Training Corps (ROTC),1,5,John Bray,0,0,0,,,
+3,Army Reserve Officer Training Corps (ROTC),2,5,Avero L Howard,0,0,0,,,0
+3,Army Reserve Officer Training Corps (ROTC),3,5,Lisa Klekowski,1,0,0,,,
+3,Army Reserve Officer Training Corps (ROTC),4,5,Mitchell Valenza,0,0,0,,,
+3,Army Reserve Officer Training Corps (ROTC),5,5,David C Norwood,0,0,0,,,0
+4,"Art, Art History & Visual Studies",1,5,Stanley Abe,0,0,1,37,4,0
+4,"Art, Art History & Visual Studies",15,5,Joshua Gibson,0,0,0,,6,0
+4,"Art, Art History & Visual Studies",24,5,Angelina Lucento,1,0,1,12,2,
+4,"Art, Art History & Visual Studies",30,5,Anna Post Rust,1,0,0,,,
+4,"Art, Art History & Visual Studies",39,5,Leonid V Tsvetkov,0,0,0,,,
+7,Biology,2,5,Daniele Armaleo,0,0,1,42,5,
+7,Biology,23,5,Kelly Hogan,1,0,1,25,0,0
+7,Biology,55,5,Julie Reynolds,1,0,1,25,2,0
+7,Biology,58,5,Amy K. Schmid ,1,1,1,22,0,0
+7,Biology,70,5,Marcy K. Uyenoyama ,1,0,1,48,2,0
+9,Cinematic Arts,1,5,Allison Dean,1,0,0,,,
+9,Cinematic Arts,2,5,James Haverkamp,0,0,0,,7,0
+9,Cinematic Arts,3,5,Douglas Herbert,0,0,0,,,0
+9,Cinematic Arts,4,5,Stephen Milligan II,0,0,0,,8,0
+9,Cinematic Arts,7,5,Jason K Sudak,0,0,0,,,
+10,Classical Studies,3,5,Peter H. Burian,0,0,1,55,6,0
+10,Classical Studies,7,5,Maurizio Forte ,0,1,1,33,0,
+10,Classical Studies,10,5,Micaela W. Janan,1,0,1,38,3,0
+10,Classical Studies,15,5,Kent J. Rigsby,0,0,0,,3,0
+10,Classical Studies,19,5,Jennifer Clare Woods,1,0,1,29,12,1
+12,Computer Science,7,5,Jeffrey S. Chase,0,0,1,31,4,0
+12,Computer Science,13,5,Brandon Fain,0,0,1,7,0,
+12,Computer Science,14,5,Eric Noel Fouh Mbindi,0,0,1,11,2,
+12,Computer Science,21,5,Ashwinkumar Venkatanaga Machanavajjhala,0,0,1,18,0,
+12,Computer Science,45,5,Danfeng Zhang,0,1,1,11,0,
+13,Cultural Anthropology,2,5,Whitney Arey,1,0,1,5,0,
+13,Cultural Anthropology,7,5,Brian Goldstone,0,0,1,14,,
+13,Cultural Anthropology,9,5,Robin Kirk,1,0,0,,4,0
+13,Cultural Anthropology,15,5,Louise Meintjes,1,0,1,29,2,1
+13,Cultural Anthropology,19,5,Irene Silverblatt,1,0,1,45,3,
+14,Dance Program,4,5,Kristin Danielle-Taylor Duncan,1,0,0,,,0
+14,Dance Program,14,5,Clay Taliaferro,0,0,0,,21,
+14,Dance Program,17,5,Julie Janus Walters,1,0,0,,8,
+14,Dance Program,18,5,Tyler Walters,0,0,0,,10,
+14,Dance Program,19,5,Andrea E. Woods Valdés,1,0,1,3,9,0
+15,Economics,19,5,Jeffrey DeSimone,0,0,1,28,3,
+15,Economics,36,5,Gregor Jarosch,0,0,1,11,1,
+15,Economics,44,5,Sergio Thomas Lagunes,0,0,0,,,0
+15,Economics,55,5,Steven G. Medema,0,1,1,37,1,0
+15,Economics,77,5,Christopher D Walker,0,0,1,1,2,1
+18,Evolutionary Anthropology,4,5,Matthew Borths,0,1,1,11,0,0
+18,Evolutionary Anthropology,8,5,Leslie J. Digby,1,0,1,32,0,
+18,Evolutionary Anthropology,9,5,Christine M. Drea ,1,0,1,35,0,0
+18,Evolutionary Anthropology,18,5,Charles L Nunn,0,1,1,27,0,
+18,Evolutionary Anthropology,21,5,Daniel Oliver Schmitt ,0,1,1,31,0,
+22,History,17,5,Thavolia Glymph,1,0,1,32,1,0
+22,History,19,5,Evan Hepler-Smith,0,0,1,10,0,
+22,History,25,5,Adriane D. Lentz-Smith,1,0,1,21,0,
+22,History,26,5,Justin Leroy,0,0,1,12,0,
+22,History,38,5,Gunther W. Peck,0,0,1,32,6,0
+24,International Comparative Studies,1,5,Frances S. Hasso,1,0,1,29,0,
+24,International Comparative Studies,2,5,Catherine Mathers,1,0,1,23,4,
+24,International Comparative Studies,3,5,Jessica Namakkal,1,0,1,14,1,
+24,International Comparative Studies,4,5,Adam R. Rosenblatt,0,0,1,15,0,0
+24,International Comparative Studies,5,5,Madisson Whitman,1,0,1,6,5,
+26,Literature,2,5,Rey Chow,1,0,1,40,1,1
+26,Literature,4,5,Ariel Dorfman,0,0,1,61,1,
+26,Literature,10,5,N. Katherine Hayles,1,0,1,49,0,0
+26,Literature,13,5,Frank Lentricchia,0,0,1,60,3,0
+26,Literature,25,5,Robyn Wiegman,1,0,1,38,0,0
+28,Mathematics,4,5,Rann Bar-On,0,0,1,17,14,
+28,Mathematics,36,5,Gregory Joseph Herschlag,0,0,1,13,0,
+28,Mathematics,49,5,Xavier Mela,0,0,1,24,,
+28,Mathematics,59,5,Anurag Sahay,0,0,1,0,0,
+28,Mathematics,61,5,Chad L. Schoen,0,0,1,44,2,0
+29,Music,1,5,Stephanie Vial Aspinwall,1,0,0,,18,0
+29,Music,2,5,Jonathan E. Bagg,0,0,0,,2,0
+29,Music,15,5,Ted Federle,0,0,0,,,0
+29,Music,21,5,Jimmy Gilmore,0,0,0,,,0
+29,Music,55,5,John Supko,0,0,1,17,2,0
+31,Physics,10,5,Shailesh Chandrasekharan,0,1,1,30,0,1
+31,Physics,17,5,Haiyan Gao,1,1,1,32,0,1
+31,Physics,35,5,Christopher R Monroe,0,1,1,34,0,0
+31,Physics,43,5,Christoph F. Schmidt,0,1,1,38,0,
+31,Physics,50,5,John E. Thomas,0,0,1,47,15,
+32,Political Science,9,5,Francisco Garfias,0,0,1,10,,
+32,Political Science,17,5,Alexander Kirshner,0,0,1,15,2,
+32,Political Science,24,5,Edmund Malesky,0,1,1,22,0,
+32,Political Science,30,5,Rachel Myrick,1,0,1,5,0,1
+32,Political Science,41,5,Daniel Stegmueller,0,1,1,14,0,
+33,Psychology & Neuroscience,1,5,Dorsa Amir,1,1,1,8,0,0
+33,Psychology & Neuroscience,3,5,Gary G. Bennett,0,1,1,24,0,0
+33,Psychology & Neuroscience,8,5,Avshalom Caspi,0,1,1,40,0,0
+33,Psychology & Neuroscience,23,5,Bridgette Martin Hard,1,0,1,20,1,0
+33,Psychology & Neuroscience,36,5,Thomas Mark Newpher,0,0,1,20,0,
+35,Romance Studies,10,5,Germain Choffart,0,1,0,,,
+35,Romance Studies,12,5,Cesar Del Castillo,0,0,0,,,1
+35,Romance Studies,39,5,Linda Orr,1,0,1,55,,
+35,Romance Studies,40,5,Liliana Paredes,1,0,1,30,13,0
+35,Romance Studies,49,5,Richard Rosa,0,0,1,30,2,1
+37,Sociology,7,5,Maria Febbo,1,0,1,23,,
+37,Sociology,8,5,Bai Gao,0,0,1,32,0,
+37,Sociology,13,5,Angel Luis Harris,0,0,1,21,2,
+37,Sociology,19,5,Hedwig Eugenie Lee,1,1,1,17,0,
+37,Sociology,21,5,Scott Michael Lynch,0,1,1,25,0,
